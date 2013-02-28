@@ -30,7 +30,7 @@ public class Search {
 	public static void main(final String args[]) {
 		// Analyzer with no stopwords
 		analyzer = new StandardAnalyzer(Version.LUCENE_41, new CharArraySet(Version.LUCENE_41, 0, true));
-		final File file = new File("C:\\Users\\yissachar.radcliffe\\Dev\\EclipseWorkspace\\Fave100\\war\\WEB-INF\\appengine-generated\\test");
+		final File file = new File("/path/to/file");
 		index = null;
 		try {
 			index = FSDirectory.open(file);
