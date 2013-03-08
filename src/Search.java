@@ -12,6 +12,7 @@ import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.MultiTermQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
@@ -55,10 +56,10 @@ public class Search {
 	}
 
 	public static void search(final String searchTerm) {
-		search(searchTerm, 5, 0);
+		search(searchTerm, 5, 0, false);
 	}
 
-	public static void search(final String searchTerm, int limit, final int page) {
+	public static void search(final String searchTerm, int limit, final int page, final boolean allWild) {
 		// No more than 25 results ever
 		final int maxLimit = 25;
 		if(limit > maxLimit) limit = maxLimit;
@@ -69,11 +70,19 @@ public class Search {
 			final String[] searchTerms = searchTerm.split(" ");
 			// Add all search terms to boolean query
 			for(int i = 0; i < searchTerms.length; i++) {
-				// Don't add terms less than length 3 - they make for bad query results
+				// Don't add terms less than length 2 - they make for bad query results
 				String searchString = searchTerms[i];
-				if(searchString.length() >= 3) {
-					if(i == searchTerms.length - 1) searchString += "*";
+				if(searchString.length() > 1) {
+					if(!allWild && i == searchTerms.length - 1) {
+						searchString += "*";
+					} else if(allWild) {
+						searchString += "*";
+					}
 					final QueryParser parser = new QueryParser(Version.LUCENE_41, "searchable_song_artist", analyzer);
+					// Special case for one word search to prevent wildcard messing up scoring
+					if(searchTerms.length == 1) {
+						parser.setMultiTermRewriteMethod(MultiTermQuery.SCORING_BOOLEAN_QUERY_REWRITE);
+					}
 					parser.setDefaultOperator(QueryParser.AND_OPERATOR);
 					final Query query = parser.parse(searchString);
 					q.add(query, Occur.MUST);
@@ -94,10 +103,13 @@ public class Search {
 			// Check if page number is invalid
 			if(results.totalHits + limit < page*limit) return;
 
+			if(count == 0 && allWild == false) {
+				search(searchTerm, searchLimit, page, true);
+			}
 			for(int i = 0; i < count; ++i) {
 			    final int docId = hits[i+offset].doc;
 			    final Document d = searcher.doc(docId);
-			    System.out.println((i + 1) + ". " + d.get("song") + "\n\t\t" + d.get("artist"));
+			    System.out.println((i + 1) + ". " + d.get("song") + "\n\t\t" + d.get("artist") + "\n\t\t Score:" + hits[i+offset].score + "\n\t\t Rank:" + d.get("rank"));
 			}
 
 		} catch (final ParseException e) {
