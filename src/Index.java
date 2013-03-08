@@ -59,7 +59,8 @@ public class Index {
 			final String statement = "SELECT * FROM table;";
 			final Statement stmt = connection.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
 		              java.sql.ResultSet.CONCUR_READ_ONLY);
-			stmt.setFetchSize(Integer.MIN_VALUE);
+			stmt.setFetchSize(100000);
+			connection.setAutoCommit(false);
 			final ResultSet results = stmt.executeQuery(statement);
 			try {
 				final IndexWriter w = new IndexWriter(index, config);
@@ -69,6 +70,7 @@ public class Index {
 					document.add(new StoredField("song", results.getString("song")));
 					document.add(new StoredField("artist", results.getString("artist")));
 					document.add(new IntDocValuesField("rank", results.getInt("rank")));
+
 					// TODO: See if it is possible to use correct filters with Lucene so we don't need extra fields
 					final Field searchField = new Field("searchable_song_artist", results.getString("searchable_song")+" "+results.getString("searchable_artist"), indexType());
 					searchField.setBoost(results.getInt("rank"));
