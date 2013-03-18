@@ -30,7 +30,7 @@ public class Search {
 
 	public static void main(final String args[]) {
 		// Analyzer with no stopwords
-		analyzer = new StandardAnalyzer(Version.LUCENE_41, new CharArraySet(Version.LUCENE_41, 0, true));
+		analyzer = new StandardAnalyzer(Version.LUCENE_42, new CharArraySet(Version.LUCENE_42, 0, true));
 		final File file = new File("/path/to/file");
 		index = null;
 		try {
@@ -42,17 +42,68 @@ public class Search {
 			e1.printStackTrace();
 		}
 
-		readInput();
+		promptSearchType();
 	}
 
-	public static void readInput() {
+	public static void promptSearchType() {
+		System.out.println("Would you like to [lookup] or [search]?");
+		final Scanner input = new Scanner(System.in);
+		final String searchType = input.nextLine();
+		if(searchType.equals("lookup")) {
+			getLookupId();
+		} else if (searchType.equalsIgnoreCase("search")) {
+			getSearchTerm();
+		} else {
+			System.out.println("Not a valid input");
+			promptSearchType();
+		}
+	}
+
+	public static void getLookupId() {
+		System.out.println("Enter a lookup ID:");
+		final Scanner input = new Scanner(System.in);
+
+		final String searchTerm = input.nextLine();
+		lookup(searchTerm);
+
+		getLookupId();
+	}
+
+	public static void getSearchTerm() {
 		System.out.println("Enter a search term:");
 		final Scanner input = new Scanner(System.in);
 
 		final String searchTerm = input.nextLine();
 		search(searchTerm);
 
-		readInput();
+		getSearchTerm();
+	}
+
+	public static void lookup(final String id) {
+		try {
+			final long startTime = System.currentTimeMillis();
+			final Query q = new QueryParser(Version.LUCENE_41, "id", analyzer).parse(id);
+
+			final TopDocs results = searcher.search(q, 10);
+
+			final long endTime = System.currentTimeMillis();
+			final long executionTime = endTime - startTime;
+			System.out.println("Found " + results.totalHits + " hits in "+executionTime+" ms");
+
+			if(results.totalHits == 0) return;
+			final ScoreDoc[] hits = results.scoreDocs;
+			final int docId = hits[0].doc;
+			final Document d = searcher.doc(docId);
+			System.out.println("\n\t\t" + d.get("song") + "\n\t\t" + d.get("artist") + "\n\t\t Score:" + hits[0].score + "\n\t\t Rank:" + d.get("rank"));
+
+
+		} catch (final ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (final IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	public static void search(final String searchTerm) {
@@ -78,9 +129,10 @@ public class Search {
 					} else if(allWild) {
 						searchString += "*";
 					}
-					final QueryParser parser = new QueryParser(Version.LUCENE_41, "searchable_song_artist", analyzer);
+					final QueryParser parser = new QueryParser(Version.LUCENE_42, "searchable_song_artist", analyzer);
 					// Special case for one word search to prevent wildcard messing up scoring
-					if(searchTerms.length == 1) {
+					// Search terms under 3 can break the search engine with SCORING_BOOLEAN_QUERY_REWRITE set
+					if(searchTerms.length == 1 && searchTerms[0].length() > 3) {
 						parser.setMultiTermRewriteMethod(MultiTermQuery.SCORING_BOOLEAN_QUERY_REWRITE);
 					}
 					parser.setDefaultOperator(QueryParser.AND_OPERATOR);
