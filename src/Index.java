@@ -13,7 +13,7 @@ import org.apache.lucene.analysis.util.CharArraySet;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
-import org.apache.lucene.document.IntDocValuesField;
+import org.apache.lucene.document.NumericDocValuesField;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -27,7 +27,7 @@ public class Index {
 
 	public static void main(final String [] args) {
 		// Analyzer with no stopwords
-		final StandardAnalyzer analyzer = new StandardAnalyzer(Version.LUCENE_41, new CharArraySet(Version.LUCENE_41, 0, true));
+		final StandardAnalyzer analyzer = new StandardAnalyzer(Version.LUCENE_42, new CharArraySet(Version.LUCENE_42, 0, true));
 		final File file = new File("/path/to/file");
 		// Delete all old indexes
 		final String[] myFiles = file.list();
@@ -44,7 +44,7 @@ public class Index {
 		}
 
 		final LogDocMergePolicy mergePolicy = new LogDocMergePolicy();
-		final IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_41, analyzer);
+		final IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_42, analyzer);
 		config.setMergePolicy(mergePolicy);
 
 		Connection connection = null;
@@ -66,10 +66,10 @@ public class Index {
 				final IndexWriter w = new IndexWriter(index, config);
 				while(results.next()) {
 					final Document document = new Document();
-					document.add(new StoredField("id", results.getString("mbid").substring(29)));
+					document.add(new Field("id", String.valueOf(results.getInt("id")), idType()));
 					document.add(new StoredField("song", results.getString("song")));
 					document.add(new StoredField("artist", results.getString("artist")));
-					document.add(new IntDocValuesField("rank", results.getInt("rank")));
+					document.add(new NumericDocValuesField("rank", results.getInt("rank")));
 
 					// TODO: See if it is possible to use correct filters with Lucene so we don't need extra fields
 					final Field searchField = new Field("searchable_song_artist", results.getString("searchable_song")+" "+results.getString("searchable_artist"), indexType());
@@ -95,6 +95,13 @@ public class Index {
 			Logger.getAnonymousLogger().log(Level.SEVERE, "Done with SQL");
 		}
 
+	}
+
+	private static FieldType idType() {
+        final FieldType idType = new FieldType();
+        idType.setIndexed(true);
+        idType.setStored(true);
+        return idType;
 	}
 
 	private static FieldType indexType() {
