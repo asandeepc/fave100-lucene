@@ -8,8 +8,7 @@ import java.sql.Statement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.analysis.util.CharArraySet;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
@@ -27,8 +26,8 @@ public class Index {
 
 	public static void main(final String [] args) {
 		// Analyzer with no stopwords
-		final StandardAnalyzer analyzer = new StandardAnalyzer(Version.LUCENE_42, new CharArraySet(Version.LUCENE_42, 0, true));
 		final File file = new File("/path/to/file");
+		final WhitespaceAnalyzer analyzer = new WhitespaceAnalyzer(Version.LUCENE_42);
 		// Delete all old indexes
 		final String[] myFiles = file.list();
 		for(int i = 0; i < myFiles.length; i++) {

@@ -2,8 +2,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Scanner;
 
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.analysis.util.CharArraySet;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
@@ -23,15 +22,15 @@ import org.apache.lucene.util.Version;
 
 public class Search {
 
-	public static StandardAnalyzer analyzer;
+	public static WhitespaceAnalyzer analyzer;
 	public static Directory index;
 	public static IndexReader reader;
 	public static IndexSearcher searcher;
 
 	public static void main(final String args[]) {
 		// Analyzer with no stopwords
-		analyzer = new StandardAnalyzer(Version.LUCENE_42, new CharArraySet(Version.LUCENE_42, 0, true));
 		final File file = new File("/path/to/file");
+		analyzer = new WhitespaceAnalyzer(Version.LUCENE_42);
 		index = null;
 		try {
 			index = FSDirectory.open(file);
