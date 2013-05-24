@@ -5,10 +5,10 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.ArrayList;
 
-import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.util.CharArraySet;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
@@ -26,7 +26,7 @@ public class Index {
 	public static void main(final String[] args) {
 		// Analyzer with no stopwords
 		final File file = new File("/path/to/file");
-		final WhitespaceAnalyzer analyzer = new WhitespaceAnalyzer(Version.LUCENE_43);
+		final StandardAnalyzer analyzer = new StandardAnalyzer(Version.LUCENE_43, new CharArraySet(Version.LUCENE_43, new ArrayList<>(), true));
 		// Delete all old indexes
 		final String[] myFiles = file.list();
 		for (int i = 0; i < myFiles.length; i++) {
@@ -46,9 +46,11 @@ public class Index {
 		final IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_43, analyzer);
 		config.setMergePolicy(mergePolicy);
 
+		int count = 0;
 		Connection connection = null;
 		try {
-			Logger.getAnonymousLogger().log(Level.SEVERE, "Starting SQL");
+			System.out.println("SQL started");
+			System.out.println("Building index...");
 			// Make connection
 			final String url = "url";
 		    final String user = "root";
@@ -64,6 +66,7 @@ public class Index {
 			try {
 				final IndexWriter w = new IndexWriter(index, config);
 				while (results.next()) {
+					count++;
 					final Document document = new Document();
 					document.add(new Field("id", String.valueOf(results.getInt("id")), idType()));
 					document.add(new StoredField("song", results.getString("song")));
@@ -81,6 +84,7 @@ public class Index {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+			System.out.println(count);
 		}
 		catch (final SQLException ignore) {
 			ignore.printStackTrace();
@@ -94,7 +98,7 @@ public class Index {
 					ignore.printStackTrace();
 				}
 			}
-			Logger.getAnonymousLogger().log(Level.SEVERE, "Done with SQL");
+			System.out.println("Index built: " + count + " entries");
 		}
 
 	}
