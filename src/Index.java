@@ -5,9 +5,11 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Date;
 
-
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.util.CharArraySet;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
@@ -54,10 +56,10 @@ public class Index {
 			System.out.println("Connecting to SQL...");
 			// Make connection
 			final String url = "url";
-		    final String user = "root";
-		    final String password = "password";
+			final String user = "root";
+			final String password = "password";
 
-		    connection = DriverManager.getConnection(url, user, password);
+			connection = DriverManager.getConnection(url, user, password);
 			final String statement = "SELECT * FROM table;";
 			final Statement stmt = connection.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
 					java.sql.ResultSet.CONCUR_READ_ONLY);
